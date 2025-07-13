@@ -2,79 +2,77 @@ import socket
 import threading
 import json
 
-class ChatServer:
-    def __init__(self, host='0.0.0.0', port=12345):
-        self.host = host
-        self.port = port
-        self.rooms = {}
-
-    def start(self):
-        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server.bind((self.host, self.port))
-        self.server.listen()
-        print(f"Server listening on {self.host}:{self.port}")
-
-        while True:
-            client, address = self.server.accept()
-            print(f"New connection from {address}")
-            thread = threading.Thread(target=self.handle_client, args=(client,))
-            thread.start()
-
-    def handle_client(self, client):
-        room_code = None  # Initialize to avoid UnboundLocalError
+def receive_messages(sock):
+    while True:
         try:
-            while True:
-                data = client.recv(1024).decode()
-                if not data:
-                    break
+            data = sock.recv(1024).decode()
+            if not data:
+                break
+            try:
+                message = json.loads(data)
+                if 'message' in message:
+                    print("Message received:", message['message'])
+            except json.JSONDecodeError:
+                print("Invalid JSON received")
+        except:
+            break
 
-                try:
-                    message = json.loads(data)
-                except json.JSONDecodeError:
-                    print("Invalid JSON received from client")
-                    break  # or continue if you prefer to keep the client alive
+def main():
+    host = input("Enter server IP (default 127.0.0.1): ") or "127.0.0.1"
+    port = 12345
 
-                if 'action' in message:
-                    action = message['action']
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        client.connect((host, port))
+        print("Connected to server.")
+    except:
+        print("Unable to connect to the server.")
+        return
 
-                    if action == 'create_room':
-                        room_code = message['room_code']
-                        self.rooms[room_code] = {'clients': [client]}
-                        print(f"Room {room_code} created")
-                        client.send(json.dumps({'status': 'room_created'}).encode())
+    threading.Thread(target=receive_messages, args=(client,), daemon=True).start()
 
-                    elif action == 'join_room':
-                        room_code = message['room_code']
-                        if room_code in self.rooms:
-                            self.rooms[room_code]['clients'].append(client)
-                            print(f"Client joined room {room_code}")
-                            client.send(json.dumps({'status': 'room_joined'}).encode())
-                        else:
-                            client.send(json.dumps({'status': 'room_not_found'}).encode())
+    while True:
+        print("\nOptions:")
+        print("1. Create room")
+        print("2. Join room")
+        print("3. Send message")
+        print("4. Exit")
 
-                    elif action == 'send_message':
-                        room_code = message['room_code']
-                        msg = message['message']
-                        if room_code in self.rooms:
-                            for c in self.rooms[room_code]['clients']:
-                                if c != client:
-                                    try:
-                                        c.send(json.dumps({'message': msg}).encode())
-                                    except:
-                                        pass
+        choice = input("Choose an option: ")
 
-        except Exception as e:
-            print(f"Error handling client: {e}")
+        if choice == "1":
+            room_code = input("Enter new room code: ")
+            message = {
+                "action": "create_room",
+                "room_code": room_code
+            }
+            client.send(json.dumps(message).encode())
 
-        finally:
-            print("Client disconnected: Connection closed")
-            if room_code and room_code in self.rooms and client in self.rooms[room_code]['clients']:
-                self.rooms[room_code]['clients'].remove(client)
-                if not self.rooms[room_code]['clients']:
-                    del self.rooms[room_code]
+        elif choice == "2":
+            room_code = input("Enter room code to join: ")
+            message = {
+                "action": "join_room",
+                "room_code": room_code
+            }
+            client.send(json.dumps(message).encode())
+
+        elif choice == "3":
+            room_code = input("Enter room code: ")
+            msg = input("Enter message: ")
+            message = {
+                "action": "send_message",
+                "room_code": room_code,
+                "message": msg
+            }
+            client.send(json.dumps(message).encode())
+
+        elif choice == "4":
+            print("Disconnected from server.")
             client.close()
+            break
 
+        else:
+            print("Invalid option.")
 
-if __name__ == '__main__':
-    server = ChatServer()
-    server.start()
+if __name__ == "__main__":
+    main()
