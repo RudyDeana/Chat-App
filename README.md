@@ -24,6 +24,6 @@ In the `client.py` file, you must manually insert the **server's IP address** wh
 Look for the line that says:
 
 ```python
-# Put the server IP here
-SERVER_IP = "127.0.0.1"
-
+#Put the server IP here
+SERVER_IP = "PUT THE SERVER IP HERE"
+```
