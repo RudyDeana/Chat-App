@@ -13,7 +13,7 @@ class ChatServer:
         
         self.rooms = {}  # {room_code: {'clients': [], 'usernames': {}}}
         self.buffer_size = 4096
-        print("Server avviato! In attesa di connessioni...")
+        print("Server started!")
 
     def handle_client(self, client):
         try:
