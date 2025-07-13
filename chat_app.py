@@ -43,7 +43,7 @@ class ChatApp:
         ])
         
         # Connection configuration
-        self.server = '101.56.214.224'  # or '127.0.0.1'
+        self.server = 'HERE PUT THE IP OF THE SERVER' 
         self.port = 5555
         self.buffer_size = 4096
         
