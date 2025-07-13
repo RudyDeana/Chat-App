@@ -62,8 +62,3 @@ Make sure both server and client devices are on the same network.
    You should now be able to send messages between connected clients.
 
 ---
-
-## License
-
-This project is open-source and available under the MIT License.
-`LICENSE`
